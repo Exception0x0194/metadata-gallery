@@ -7,12 +7,12 @@ use image::GenericImageView;
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn extract_metadata(input_bytes: &[u8]) -> Result<String, Error> {
-    let nai_data_result = extract_nai_data(input_bytes);
-    if nai_data_result.is_ok() {
-        return nai_data_result;
-    }
     let exif_data_result = extract_exif(input_bytes);
-    return exif_data_result;
+    if (exif_data_result.is_ok()) {
+        return exif_data_result;
+    }
+    let nai_data_result = extract_nai_data(input_bytes);
+    return nai_data_result;
 }
 
 #[frb(opaque)]

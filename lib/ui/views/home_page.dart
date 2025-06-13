@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
+import '../../src/core/constants.dart';
 import '../viewmodels/home_page_viewmodel.dart';
 import '../widgets/image_card.dart';
 import 'scan_progress_indicator.dart';
@@ -18,7 +19,19 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   HomePageViewmodel get viewmodel => widget.viewmodel;
 
-  TextEditingController searchController = TextEditingController();
+  TextEditingController get searchController => viewmodel.searchController;
+  FocusNode get searchFocusNode => viewmodel.searchFocusNode;
+
+  final Map<String, PopupMenuItem<String>> orderEntries = {
+    prefsOrderByName: PopupMenuItem(
+      value: prefsOrderByName,
+      child: Text('文件名称'),
+    ),
+    prefsOrderByLastModified: PopupMenuItem(
+      value: prefsOrderByLastModified,
+      child: Text('修改时间'),
+    ),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +43,7 @@ class _HomePageState extends State<HomePage> {
             child: ListTile(
               title: TextField(
                 controller: searchController,
+                focusNode: searchFocusNode,
                 onSubmitted: (keyword) => viewmodel.searchImages(keyword),
               ),
               subtitle: Text('检索的元数据内容'),
@@ -37,6 +51,31 @@ class _HomePageState extends State<HomePage> {
                 onPressed: () => viewmodel.searchImages(searchController.text),
                 icon: Icon(Icons.waving_hand_outlined),
               ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 32.0),
+            child: ListenableBuilder(
+              listenable: viewmodel,
+              builder: (context, child) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text('排序依据：'),
+                    PopupMenuButton<String>(
+                      child: orderEntries[viewmodel.orderOption]!.child as Text,
+                      itemBuilder: (context) => orderEntries.values.toList(),
+                      onSelected: (value) => viewmodel.setSortOption(value),
+                    ),
+                    SizedBox(width: 8.0),
+                    Text('倒序'),
+                    Checkbox(
+                      value: viewmodel.orderReversed,
+                      onChanged: (value) => viewmodel.setReversed(value),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
           ListenableBuilder(
@@ -69,44 +108,6 @@ class _HomePageState extends State<HomePage> {
         onPressed: () => viewmodel.callScan(),
         child: Icon(Icons.refresh_outlined),
       ),
-      // floatingActionButton: Column(
-      //   mainAxisSize: MainAxisSize.min,
-      //   children: [
-      //     FloatingActionButton(
-      //       onPressed: () {
-      //         if (nameController.text.isEmpty) return;
-      //         setState(() {
-      //           text = greet(name: nameController.text);
-      //         });
-      //       },
-      //       child: Icon(Icons.waving_hand),
-      //     ),
-      // SizedBox(height: 8.0),
-      // FloatingActionButton(
-      //   onPressed: () async {
-      //     final pickResult = await ImagePicker().pickImage(
-      //       source: ImageSource.gallery,
-      //     );
-      //     if (pickResult == null) return;
-      //     final fileBytes = await pickResult.readAsBytes();
-      //     try {
-      //       setState(() {
-      //         text = extractMetadata(inputBytes: fileBytes);
-      //       });
-      //     } on PanicException catch (e) {
-      //       setState(() {
-      //         text = 'Rust panicked: $e';
-      //       });
-      //     } catch (e) {
-      //       setState(() {
-      //         text = 'Rust returned error: $e';
-      //       });
-      //     }
-      //   },
-      //   child: Icon(Icons.photo_outlined),
-      // ),
-      // ],
-      // ),
     );
   }
 }

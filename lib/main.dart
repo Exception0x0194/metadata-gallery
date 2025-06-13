@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 
 import 'src/rust/frb_generated.dart';
 import 'src/services/database_service.dart';
+import 'src/services/preferences_service.dart';
 import 'ui/viewmodels/home_page_viewmodel.dart';
 import 'ui/viewmodels/settings_page_viewmodel.dart';
 import 'ui/views/home_page.dart';
@@ -66,6 +67,11 @@ class _MyAppState extends State<MyApp> {
 Future<void> setupLocators() async {
   final getIt = GetIt.instance;
 
+  // Initialize shared preferences
+  final prefsService = PreferencesService();
+  await prefsService.initialize();
+  getIt.registerSingleton(prefsService);
+
   // Initialize sqlite
   final databaseService = DatabaseService();
   await databaseService.initialize();
@@ -74,8 +80,10 @@ Future<void> setupLocators() async {
 
 void setupViewmodels() {
   DatabaseService dbService = GetIt.I();
+  PreferencesService prefsService = GetIt.I();
 
   final homePageViewmodel = HomePageViewmodel();
+  prefsService.addListener(() => homePageViewmodel.onPrefsChanged());
   GetIt.I.registerSingleton(homePageViewmodel);
 
   final settingsPageViewmodel = SettingsPageViewmodel();

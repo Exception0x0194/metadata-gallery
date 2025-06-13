@@ -73,7 +73,7 @@ class DatabaseService with ChangeNotifier {
     final List<Map<String, dynamic>> maps = await db.query(
       _imageTableName,
       columns: [_colFilePath, _colMetadataText, _colLastModified],
-      where: '$_colMetadataText REGEXP_LIKE ?',
+      where: '$_colMetadataText LIKE ?',
       whereArgs: ['%$keyword%'],
     );
 
