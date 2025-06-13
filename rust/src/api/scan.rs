@@ -2,35 +2,39 @@ use crate::api::metadata::extract_metadata;
 use crate::frb_generated::StreamSink;
 use anyhow::Error;
 use rayon::prelude::*;
-use rusqlite::Connection;
 use std::collections::HashMap;
+use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
-
 use std::{
     fs::File,
     io::Read,
     sync::atomic::{AtomicU32, Ordering},
 };
 
+#[derive(Debug, Clone)]
 pub struct ScanProgress {
-    pub total: u32,
+    pub total_to_process: u32,
     pub processed: u32,
+    pub image_scan_results: Option<Vec<ImageScanResult>>,
+    pub folder_scan_result: Option<FolderScanResult>,
 }
 
-#[flutter_rust_bridge::frb(sync)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+pub struct ImageScanResult {
+    pub file_path: String,
+    pub file_last_modified: u64,
+    pub metadata_text: String,
+}
 
-struct ProcessingResult {
-    file_path: String,
-    file_last_modified: u64,
-    metadata_text: String,
+#[derive(Debug, Clone)]
+pub struct FolderScanResult {
+    pub folder_path: String,
+    pub scan_timestamp: u64,
+    pub total_image_count: u32,
 }
 
 // 处理单个图片的函数，保存缩略图并返回处理结果
-fn process_and_save_single_image(
-    image_path: &str,
-    _thumbnail_path: &str,
-) -> Result<ProcessingResult, Error> {
+fn process_single_image(image_path: &str) -> Result<ImageScanResult, Error> {
     // 读取文件内容
     let mut file = File::open(image_path)?;
     let mut file_bytes = vec![];
@@ -42,143 +46,112 @@ fn process_and_save_single_image(
     // 提取数据
     let metadata_text = extract_metadata(&file_bytes)?;
 
-    Ok(ProcessingResult {
+    Ok(ImageScanResult {
         file_path: image_path.to_string(),
         file_last_modified: file_last_modified,
         metadata_text: metadata_text,
     })
 }
 
-// 由 Dart 调用的主函数
-
-#[flutter_rust_bridge::frb(sync)]
-
-pub fn scan_folders(
+#[flutter_rust_bridge::frb]
+pub fn scan_folder(
     sink: StreamSink<ScanProgress>,
-    folders: Vec<String>,
-    db_path: String,
-    thumbnail_dir: String,
-) {
-    std::thread::spawn(move || {
-        let mut conn = Connection::open(&db_path).expect("无法打开数据库");
+    folder_path: String,
+    existing_images: HashMap<String, u64>,
+) -> Result<(), Error> {
+    // 递归查找文件夹下的所有文件
+    let all_files_in_folder: Vec<String> = walkdir::WalkDir::new(&folder_path)
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter(|e| e.file_type().is_file())
+        .map(|e| e.path().to_str().unwrap_or_default().to_string())
+        .collect();
 
-        // 从数据库预加载现有图片信息
-        let mut existing_images = HashMap::<String, u64>::new();
-
-        {
-            let mut stmt = conn
-                .prepare("SELECT file_path, last_modified FROM images")
-                .unwrap();
-            let rows = stmt
-                .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
-                .unwrap();
-            for row in rows {
-                if let Ok((path, modified)) = row {
-                    existing_images.insert(path, modified);
-                }
-            }
-        }
-
-        // 递归展开文件夹，并进行过滤
-        let all_image_paths: Vec<String> = folders
-            .iter()
-            .flat_map(|folder| {
-                walkdir::WalkDir::new(folder)
-                    .into_iter()
-                    .filter_map(Result::ok)
-                    .filter(|e| e.file_type().is_file())
-            })
-            .map(|e| e.path().to_str().unwrap_or_default().to_string())
-            .collect();
-
-        let images_to_process: Vec<String> = all_image_paths
-            .into_iter()
-            .filter(|path| {
-                // 获取文件的元数据和最后修改时间 (Unix apoch)
-                if let Ok(metadata) = std::fs::metadata(path) {
-                    if let Ok(modified_time) = metadata.modified() {
-                        let modified_secs = modified_time
-                            .duration_since(SystemTime::UNIX_EPOCH)
-                            .map(|d| d.as_secs())
-                            .unwrap_or(0);
-
-                        // 检查文件是否存在于数据库以及修改时间是否匹配
-                        match existing_images.get(path) {
-                            Some(db_modified_time) if *db_modified_time == modified_secs => {
-                                false // 路径存在且修改时间相同，跳过
-                            }
-                            _ => true, // 路径不存在或修改时间不同，需要处理
-                        }
-                    } else {
-                        true // 无法获取修改时间，默认处理
+    // 根据 Dart 传来的已有文件信息，筛选出需要重新处理的文件
+    let images_to_process: Vec<String> = all_files_in_folder
+        .par_iter() // 使用并行迭代器提高过滤效率
+        .filter(|path| {
+            if let Ok(metadata) = fs::metadata(path) {
+                if let Ok(modified_time) = metadata.modified() {
+                    let modified_secs = modified_time
+                        .duration_since(UNIX_EPOCH)
+                        .map(|d| d.as_secs())
+                        .unwrap_or(0);
+                    match existing_images.get(*path) {
+                        Some(db_modified_time) if *db_modified_time == modified_secs => false, // 存在且未修改，跳过
+                        _ => true, // 不存在或已修改，需要处理
                     }
                 } else {
-                    true // 无法读取元数据，默认处理
-                }
-            })
-            .collect();
+                    true
+                } // 无法获取修改时间，默认处理
+            } else {
+                true
+            } // 无法获取元数据，默认处理
+        })
+        .cloned() // 将 &String 转换为 String
+        .collect();
 
-        //  并行处理筛选后的图片
-        let total_files = images_to_process.len() as u32;
-        if total_files == 0 {
-            // 如果没有文件需要处理，也发送一个完成状态
-            let _ = sink.add(ScanProgress {
-                total: 0,
-                processed: 0,
-            });
-            return;
-        }
+    // 发送初始进度
+    let total_to_process = images_to_process.len() as u32;
+    let processed_count = AtomicU32::new(0);
+    sink.add(ScanProgress {
+        total_to_process: total_to_process,
+        processed: 0,
+        image_scan_results: None,
+        folder_scan_result: None,
+    })
+    .unwrap();
 
-        let processed_count = AtomicU32::new(0);
-        let _ = sink.add(ScanProgress {
-            total: total_files,
+    if total_to_process == 0 {
+        // 如果没有文件需要处理，也发送一个最终报告
+        // 这很重要，因为 Dart 端需要知道这个文件夹已经处理完了
+        let folder_result = FolderScanResult {
+            folder_path,
+            total_image_count: all_files_in_folder.len() as u32, // 总数还是需要报告的
+            scan_timestamp: SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs(),
+        };
+        sink.add(ScanProgress {
+            total_to_process: 0,
             processed: 0,
-        });
+            image_scan_results: Some(vec![]), // 返回一个空的 Vec
+            folder_scan_result: Some(folder_result),
+        })
+        .unwrap();
+        return Ok(());
+    }
 
-        let processing_results: Vec<ProcessingResult> = images_to_process
-            .par_iter()
-            .filter_map(|path| {
-                // process_and_save_single_image 函数现在应该返回包含 last_modified 的结果
-                let result = process_and_save_single_image(path, &thumbnail_dir);
-                if result.is_err() {
-                    println!("Error processing image: {}", result.as_ref().unwrap_err());
-                }
-                let count = processed_count.fetch_add(1, Ordering::SeqCst) + 1;
-                let _ = sink.add(ScanProgress {
-                    total: total_files,
-                    processed: count,
-                });
-                return result.ok();
-            })
-            .collect();
+    // 并行处理所有需要更新的图片
+    let processing_results: Vec<ImageScanResult> = images_to_process
+        .par_iter()
+        .filter_map(|path| {
+            let process_result = process_single_image(path);
+            // 每处理完一个，就原子性地增加计数器并发送进度
+            let count = processed_count.fetch_add(1, Ordering::SeqCst) + 1;
+            let _ = sink.add(ScanProgress {
+                total_to_process,
+                processed: count,
+                image_scan_results: None,
+                folder_scan_result: None,
+            });
+            process_result.ok()
+        })
+        .collect();
 
-        // 写入或更新数据库
+    // 所有图片处理完毕，构建最终的文件夹扫描结果
+    let folder_result = FolderScanResult {
+        folder_path: folder_path,
+        total_image_count: all_files_in_folder.len() as u32, // 文件夹内图片总数
+        scan_timestamp: SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs(),
+    };
 
-        let tx = conn.transaction().unwrap();
-        {
-            // 确保 file_path 是主键或具有 UNIQUE 约束
-            let mut stmt = tx.prepare("INSERT OR REPLACE INTO images (file_path, metadata_text, last_modified) VALUES (?1, ?2, ?3)").unwrap();
-            for result in processing_results {
-                stmt.execute((
-                    &result.file_path,
-                    &result.metadata_text,
-                    &result.file_last_modified,
-                ))
-                .unwrap();
-            }
-        }
+    // 发送包含所有扫描数据的最终消息
+    sink.add(ScanProgress {
+        total_to_process,
+        processed: total_to_process,
+        image_scan_results: Some(processing_results),
+        folder_scan_result: Some(folder_result),
+    })
+    .unwrap();
 
-        tx.commit().unwrap();
-        conn.close().unwrap();
-    });
-}
-
-#[flutter_rust_bridge::frb(sync)] // Synchronous mode for simplicity of the demo
-pub fn greet(name: String) -> String {
-    format!("Hello, {name}!")
-}
-
-#[flutter_rust_bridge::frb(init)]
-pub fn init_app() {
-    flutter_rust_bridge::setup_default_user_utils();
+    Ok(())
 }

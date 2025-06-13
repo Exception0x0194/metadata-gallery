@@ -38,7 +38,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.10.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1463178673;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 302778711;
 
 // Section: executor
 
@@ -317,36 +317,6 @@ fn wire__crate__api__metadata__extract_metadata_impl(
         },
     )
 }
-fn wire__crate__api__scan__greet_impl(
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "greet",
-            port: None,
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_name = <String>::sse_decode(&mut deserializer);
-            deserializer.end();
-            transform_result_sse::<_, ()>((move || {
-                let output_ok = Result::<_, ()>::Ok(crate::api::scan::greet(api_name))?;
-                Ok(output_ok)
-            })())
-        },
-    )
-}
 fn wire__crate__api__simple__greet_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -374,40 +344,6 @@ fn wire__crate__api__simple__greet_impl(
                 let output_ok = Result::<_, ()>::Ok(crate::api::simple::greet(api_name))?;
                 Ok(output_ok)
             })())
-        },
-    )
-}
-fn wire__crate__api__scan__init_app_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "init_app",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            deserializer.end();
-            move |context| {
-                transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok({
-                        crate::api::scan::init_app();
-                    })?;
-                    Ok(output_ok)
-                })())
-            }
         },
     )
 }
@@ -445,16 +381,17 @@ fn wire__crate__api__simple__init_app_impl(
         },
     )
 }
-fn wire__crate__api__scan__scan_folders_impl(
+fn wire__crate__api__scan__scan_folder_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
     data_len_: i32,
-) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "scan_folders",
-            port: None,
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+            debug_name: "scan_folder",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
         },
         move || {
             let message = unsafe {
@@ -470,21 +407,22 @@ fn wire__crate__api__scan__scan_folders_impl(
                 crate::api::scan::ScanProgress,
                 flutter_rust_bridge::for_generated::SseCodec,
             >>::sse_decode(&mut deserializer);
-            let api_folders = <Vec<String>>::sse_decode(&mut deserializer);
-            let api_db_path = <String>::sse_decode(&mut deserializer);
-            let api_thumbnail_dir = <String>::sse_decode(&mut deserializer);
+            let api_folder_path = <String>::sse_decode(&mut deserializer);
+            let api_existing_images =
+                <std::collections::HashMap<String, u64>>::sse_decode(&mut deserializer);
             deserializer.end();
-            transform_result_sse::<_, ()>((move || {
-                let output_ok = Result::<_, ()>::Ok({
-                    crate::api::scan::scan_folders(
-                        api_sink,
-                        api_folders,
-                        api_db_path,
-                        api_thumbnail_dir,
-                    );
-                })?;
-                Ok(output_ok)
-            })())
+            move |context| {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || {
+                        let output_ok = crate::api::scan::scan_folder(
+                            api_sink,
+                            api_folder_path,
+                            api_existing_images,
+                        )?;
+                        Ok(output_ok)
+                    })(),
+                )
+            }
         },
     )
 }
@@ -512,6 +450,14 @@ impl SseDecode for DataReader {
             flutter_rust_bridge::for_generated::RustAutoOpaqueInner<DataReader>,
         >>::sse_decode(deserializer);
         return flutter_rust_bridge::for_generated::rust_auto_opaque_decode_owned(inner);
+    }
+}
+
+impl SseDecode for std::collections::HashMap<String, u64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <Vec<(String, u64)>>::sse_decode(deserializer);
+        return inner.into_iter().collect();
     }
 }
 
@@ -543,6 +489,20 @@ impl SseDecode for String {
     }
 }
 
+impl SseDecode for crate::api::scan::FolderScanResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_folderPath = <String>::sse_decode(deserializer);
+        let mut var_scanTimestamp = <u64>::sse_decode(deserializer);
+        let mut var_totalImageCount = <u32>::sse_decode(deserializer);
+        return crate::api::scan::FolderScanResult {
+            folder_path: var_folderPath,
+            scan_timestamp: var_scanTimestamp,
+            total_image_count: var_totalImageCount,
+        };
+    }
+}
+
 impl SseDecode for i32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -550,13 +510,29 @@ impl SseDecode for i32 {
     }
 }
 
-impl SseDecode for Vec<String> {
+impl SseDecode for crate::api::scan::ImageScanResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_filePath = <String>::sse_decode(deserializer);
+        let mut var_fileLastModified = <u64>::sse_decode(deserializer);
+        let mut var_metadataText = <String>::sse_decode(deserializer);
+        return crate::api::scan::ImageScanResult {
+            file_path: var_filePath,
+            file_last_modified: var_fileLastModified,
+            metadata_text: var_metadataText,
+        };
+    }
+}
+
+impl SseDecode for Vec<crate::api::scan::ImageScanResult> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = vec![];
         for idx_ in 0..len_ {
-            ans_.push(<String>::sse_decode(deserializer));
+            ans_.push(<crate::api::scan::ImageScanResult>::sse_decode(
+                deserializer,
+            ));
         }
         return ans_;
     }
@@ -574,14 +550,67 @@ impl SseDecode for Vec<u8> {
     }
 }
 
+impl SseDecode for Vec<(String, u64)> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = vec![];
+        for idx_ in 0..len_ {
+            ans_.push(<(String, u64)>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Option<crate::api::scan::FolderScanResult> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::api::scan::FolderScanResult>::sse_decode(
+                deserializer,
+            ));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<Vec<crate::api::scan::ImageScanResult>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<Vec<crate::api::scan::ImageScanResult>>::sse_decode(
+                deserializer,
+            ));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for (String, u64) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_field0 = <String>::sse_decode(deserializer);
+        let mut var_field1 = <u64>::sse_decode(deserializer);
+        return (var_field0, var_field1);
+    }
+}
+
 impl SseDecode for crate::api::scan::ScanProgress {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_total = <u32>::sse_decode(deserializer);
+        let mut var_totalToProcess = <u32>::sse_decode(deserializer);
         let mut var_processed = <u32>::sse_decode(deserializer);
+        let mut var_imageScanResults =
+            <Option<Vec<crate::api::scan::ImageScanResult>>>::sse_decode(deserializer);
+        let mut var_folderScanResult =
+            <Option<crate::api::scan::FolderScanResult>>::sse_decode(deserializer);
         return crate::api::scan::ScanProgress {
-            total: var_total,
+            total_to_process: var_totalToProcess,
             processed: var_processed,
+            image_scan_results: var_imageScanResults,
+            folder_scan_result: var_folderScanResult,
         };
     }
 }
@@ -590,6 +619,13 @@ impl SseDecode for u32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         deserializer.cursor.read_u32::<NativeEndian>().unwrap()
+    }
+}
+
+impl SseDecode for u64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_u64::<NativeEndian>().unwrap()
     }
 }
 
@@ -647,8 +683,8 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        9 => wire__crate__api__scan__init_app_impl(port, ptr, rust_vec_len, data_len),
-        10 => wire__crate__api__simple__init_app_impl(port, ptr, rust_vec_len, data_len),
+        8 => wire__crate__api__simple__init_app_impl(port, ptr, rust_vec_len, data_len),
+        9 => wire__crate__api__scan__scan_folder_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -662,9 +698,7 @@ fn pde_ffi_dispatcher_sync_impl(
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
         6 => wire__crate__api__metadata__extract_metadata_impl(ptr, rust_vec_len, data_len),
-        7 => wire__crate__api__scan__greet_impl(ptr, rust_vec_len, data_len),
-        8 => wire__crate__api__simple__greet_impl(ptr, rust_vec_len, data_len),
-        11 => wire__crate__api__scan__scan_folders_impl(ptr, rust_vec_len, data_len),
+        7 => wire__crate__api__simple__greet_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -687,11 +721,57 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<DataReader>> for DataReader {
 }
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::scan::FolderScanResult {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.folder_path.into_into_dart().into_dart(),
+            self.scan_timestamp.into_into_dart().into_dart(),
+            self.total_image_count.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::scan::FolderScanResult
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::scan::FolderScanResult>
+    for crate::api::scan::FolderScanResult
+{
+    fn into_into_dart(self) -> crate::api::scan::FolderScanResult {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::scan::ImageScanResult {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.file_path.into_into_dart().into_dart(),
+            self.file_last_modified.into_into_dart().into_dart(),
+            self.metadata_text.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::scan::ImageScanResult
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::scan::ImageScanResult>
+    for crate::api::scan::ImageScanResult
+{
+    fn into_into_dart(self) -> crate::api::scan::ImageScanResult {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::scan::ScanProgress {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.total.into_into_dart().into_dart(),
+            self.total_to_process.into_into_dart().into_dart(),
             self.processed.into_into_dart().into_dart(),
+            self.image_scan_results.into_into_dart().into_dart(),
+            self.folder_scan_result.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -722,6 +802,13 @@ impl SseEncode for DataReader {
     }
 }
 
+impl SseEncode for std::collections::HashMap<String, u64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<(String, u64)>>::sse_encode(self.into_iter().collect(), serializer);
+    }
+}
+
 impl SseEncode
     for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<DataReader>>
 {
@@ -749,6 +836,15 @@ impl SseEncode for String {
     }
 }
 
+impl SseEncode for crate::api::scan::FolderScanResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.folder_path, serializer);
+        <u64>::sse_encode(self.scan_timestamp, serializer);
+        <u32>::sse_encode(self.total_image_count, serializer);
+    }
+}
+
 impl SseEncode for i32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -756,12 +852,21 @@ impl SseEncode for i32 {
     }
 }
 
-impl SseEncode for Vec<String> {
+impl SseEncode for crate::api::scan::ImageScanResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.file_path, serializer);
+        <u64>::sse_encode(self.file_last_modified, serializer);
+        <String>::sse_encode(self.metadata_text, serializer);
+    }
+}
+
+impl SseEncode for Vec<crate::api::scan::ImageScanResult> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <String>::sse_encode(item, serializer);
+            <crate::api::scan::ImageScanResult>::sse_encode(item, serializer);
         }
     }
 }
@@ -776,11 +881,57 @@ impl SseEncode for Vec<u8> {
     }
 }
 
+impl SseEncode for Vec<(String, u64)> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <(String, u64)>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::api::scan::FolderScanResult> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::api::scan::FolderScanResult>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<Vec<crate::api::scan::ImageScanResult>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <Vec<crate::api::scan::ImageScanResult>>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for (String, u64) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.0, serializer);
+        <u64>::sse_encode(self.1, serializer);
+    }
+}
+
 impl SseEncode for crate::api::scan::ScanProgress {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <u32>::sse_encode(self.total, serializer);
+        <u32>::sse_encode(self.total_to_process, serializer);
         <u32>::sse_encode(self.processed, serializer);
+        <Option<Vec<crate::api::scan::ImageScanResult>>>::sse_encode(
+            self.image_scan_results,
+            serializer,
+        );
+        <Option<crate::api::scan::FolderScanResult>>::sse_encode(
+            self.folder_scan_result,
+            serializer,
+        );
     }
 }
 
@@ -788,6 +939,13 @@ impl SseEncode for u32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         serializer.cursor.write_u32::<NativeEndian>(self).unwrap();
+    }
+}
+
+impl SseEncode for u64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_u64::<NativeEndian>(self).unwrap();
     }
 }
 

@@ -1,11 +1,11 @@
 class ScannedImage {
   final String filePath;
+  final BigInt lastModieied;
   final String metadataString;
 
-  ScannedImage({required this.filePath, required this.metadataString});
-
-  @override
-  String toString() {
-    return 'ImageMetadata{filePath: $filePath, metadataString: $metadataString}';
-  }
+  ScannedImage({
+    required this.filePath,
+    required this.lastModieied,
+    required this.metadataString,
+  });
 }

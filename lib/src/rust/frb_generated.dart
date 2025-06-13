@@ -55,7 +55,6 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 
   @override
   Future<void> executeRustInitializers() async {
-    await api.crateApiScanInitApp();
     await api.crateApiSimpleInitApp();
   }
 
@@ -67,7 +66,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.10.0';
 
   @override
-  int get rustContentHash => -1463178673;
+  int get rustContentHash => 302778711;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -93,18 +92,13 @@ abstract class RustLibApi extends BaseApi {
 
   String crateApiMetadataExtractMetadata({required List<int> inputBytes});
 
-  String crateApiScanGreet({required String name});
-
   String crateApiSimpleGreet({required String name});
-
-  Future<void> crateApiScanInitApp();
 
   Future<void> crateApiSimpleInitApp();
 
-  Stream<ScanProgress> crateApiScanScanFolders({
-    required List<String> folders,
-    required String dbPath,
-    required String thumbnailDir,
+  Stream<ScanProgress> crateApiScanScanFolder({
+    required String folderPath,
+    required Map<String, BigInt> existingImages,
   });
 
   RustArcIncrementStrongCountFnType
@@ -317,36 +311,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  String crateApiScanGreet({required String name}) {
-    return handler.executeSync(
-      SyncTask(
-        callFfi: () {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_String(name, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 7)!;
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_String,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateApiScanGreetConstMeta,
-        argValues: [name],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiScanGreetConstMeta =>
-      const TaskConstMeta(debugName: "greet", argNames: ["name"]);
-
-  @override
   String crateApiSimpleGreet({required String name}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(name, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 8)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 7)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -363,33 +334,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "greet", argNames: ["name"]);
 
   @override
-  Future<void> crateApiScanInitApp() {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 9,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_unit,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateApiScanInitAppConstMeta,
-        argValues: [],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiScanInitAppConstMeta =>
-      const TaskConstMeta(debugName: "init_app", argNames: []);
-
-  @override
   Future<void> crateApiSimpleInitApp() {
     return handler.executeNormal(
       NormalTask(
@@ -398,7 +342,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 10,
+            funcId: 8,
             port: port_,
           );
         },
@@ -417,37 +361,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "init_app", argNames: []);
 
   @override
-  Stream<ScanProgress> crateApiScanScanFolders({
-    required List<String> folders,
-    required String dbPath,
-    required String thumbnailDir,
+  Stream<ScanProgress> crateApiScanScanFolder({
+    required String folderPath,
+    required Map<String, BigInt> existingImages,
   }) {
     final sink = RustStreamSink<ScanProgress>();
-    handler.executeSync(
-      SyncTask(
-        callFfi: () {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_StreamSink_scan_progress_Sse(sink, serializer);
-          sse_encode_list_String(folders, serializer);
-          sse_encode_String(dbPath, serializer);
-          sse_encode_String(thumbnailDir, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_unit,
-          decodeErrorData: null,
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_StreamSink_scan_progress_Sse(sink, serializer);
+            sse_encode_String(folderPath, serializer);
+            sse_encode_Map_String_u_64_None(existingImages, serializer);
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 9,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: sse_decode_AnyhowException,
+          ),
+          constMeta: kCrateApiScanScanFolderConstMeta,
+          argValues: [sink, folderPath, existingImages],
+          apiImpl: this,
         ),
-        constMeta: kCrateApiScanScanFoldersConstMeta,
-        argValues: [sink, folders, dbPath, thumbnailDir],
-        apiImpl: this,
       ),
     );
     return sink.stream;
   }
 
-  TaskConstMeta get kCrateApiScanScanFoldersConstMeta => const TaskConstMeta(
-    debugName: "scan_folders",
-    argNames: ["sink", "folders", "dbPath", "thumbnailDir"],
+  TaskConstMeta get kCrateApiScanScanFolderConstMeta => const TaskConstMeta(
+    debugName: "scan_folder",
+    argNames: ["sink", "folderPath", "existingImages"],
   );
 
   RustArcIncrementStrongCountFnType
@@ -483,6 +432,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  Map<String, BigInt> dco_decode_Map_String_u_64_None(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return Map.fromEntries(
+      dco_decode_list_record_string_u_64(raw).map((e) => MapEntry(e.$1, e.$2)),
+    );
+  }
+
+  @protected
   DataReader
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDataReader(
     dynamic raw,
@@ -506,15 +463,47 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  FolderScanResult dco_decode_box_autoadd_folder_scan_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_folder_scan_result(raw);
+  }
+
+  @protected
+  FolderScanResult dco_decode_folder_scan_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return FolderScanResult(
+      folderPath: dco_decode_String(arr[0]),
+      scanTimestamp: dco_decode_u_64(arr[1]),
+      totalImageCount: dco_decode_u_32(arr[2]),
+    );
+  }
+
+  @protected
   int dco_decode_i_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
   }
 
   @protected
-  List<String> dco_decode_list_String(dynamic raw) {
+  ImageScanResult dco_decode_image_scan_result(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
-    return (raw as List<dynamic>).map(dco_decode_String).toList();
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return ImageScanResult(
+      filePath: dco_decode_String(arr[0]),
+      fileLastModified: dco_decode_u_64(arr[1]),
+      metadataText: dco_decode_String(arr[2]),
+    );
+  }
+
+  @protected
+  List<ImageScanResult> dco_decode_list_image_scan_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_image_scan_result).toList();
   }
 
   @protected
@@ -530,14 +519,44 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<(String, BigInt)> dco_decode_list_record_string_u_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_record_string_u_64).toList();
+  }
+
+  @protected
+  FolderScanResult? dco_decode_opt_box_autoadd_folder_scan_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_folder_scan_result(raw);
+  }
+
+  @protected
+  List<ImageScanResult>? dco_decode_opt_list_image_scan_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_list_image_scan_result(raw);
+  }
+
+  @protected
+  (String, BigInt) dco_decode_record_string_u_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2) {
+      throw Exception('Expected 2 elements, got ${arr.length}');
+    }
+    return (dco_decode_String(arr[0]), dco_decode_u_64(arr[1]));
+  }
+
+  @protected
   ScanProgress dco_decode_scan_progress(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 2)
-      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
     return ScanProgress(
-      total: dco_decode_u_32(arr[0]),
+      totalToProcess: dco_decode_u_32(arr[0]),
       processed: dco_decode_u_32(arr[1]),
+      imageScanResults: dco_decode_opt_list_image_scan_result(arr[2]),
+      folderScanResult: dco_decode_opt_box_autoadd_folder_scan_result(arr[3]),
     );
   }
 
@@ -545,6 +564,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   int dco_decode_u_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
+  }
+
+  @protected
+  BigInt dco_decode_u_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dcoDecodeU64(raw);
   }
 
   @protected
@@ -597,6 +622,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  Map<String, BigInt> sse_decode_Map_String_u_64_None(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_list_record_string_u_64(deserializer);
+    return Map.fromEntries(inner.map((e) => MapEntry(e.$1, e.$2)));
+  }
+
+  @protected
   DataReader
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDataReader(
     SseDeserializer deserializer,
@@ -624,19 +658,55 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  FolderScanResult sse_decode_box_autoadd_folder_scan_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_folder_scan_result(deserializer));
+  }
+
+  @protected
+  FolderScanResult sse_decode_folder_scan_result(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_folderPath = sse_decode_String(deserializer);
+    var var_scanTimestamp = sse_decode_u_64(deserializer);
+    var var_totalImageCount = sse_decode_u_32(deserializer);
+    return FolderScanResult(
+      folderPath: var_folderPath,
+      scanTimestamp: var_scanTimestamp,
+      totalImageCount: var_totalImageCount,
+    );
+  }
+
+  @protected
   int sse_decode_i_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getInt32();
   }
 
   @protected
-  List<String> sse_decode_list_String(SseDeserializer deserializer) {
+  ImageScanResult sse_decode_image_scan_result(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_filePath = sse_decode_String(deserializer);
+    var var_fileLastModified = sse_decode_u_64(deserializer);
+    var var_metadataText = sse_decode_String(deserializer);
+    return ImageScanResult(
+      filePath: var_filePath,
+      fileLastModified: var_fileLastModified,
+      metadataText: var_metadataText,
+    );
+  }
+
+  @protected
+  List<ImageScanResult> sse_decode_list_image_scan_result(
+    SseDeserializer deserializer,
+  ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     var len_ = sse_decode_i_32(deserializer);
-    var ans_ = <String>[];
+    var ans_ = <ImageScanResult>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
-      ans_.add(sse_decode_String(deserializer));
+      ans_.add(sse_decode_image_scan_result(deserializer));
     }
     return ans_;
   }
@@ -656,17 +726,82 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<(String, BigInt)> sse_decode_list_record_string_u_64(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <(String, BigInt)>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_record_string_u_64(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  FolderScanResult? sse_decode_opt_box_autoadd_folder_scan_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_folder_scan_result(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  List<ImageScanResult>? sse_decode_opt_list_image_scan_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_list_image_scan_result(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  (String, BigInt) sse_decode_record_string_u_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_field0 = sse_decode_String(deserializer);
+    var var_field1 = sse_decode_u_64(deserializer);
+    return (var_field0, var_field1);
+  }
+
+  @protected
   ScanProgress sse_decode_scan_progress(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_total = sse_decode_u_32(deserializer);
+    var var_totalToProcess = sse_decode_u_32(deserializer);
     var var_processed = sse_decode_u_32(deserializer);
-    return ScanProgress(total: var_total, processed: var_processed);
+    var var_imageScanResults = sse_decode_opt_list_image_scan_result(
+      deserializer,
+    );
+    var var_folderScanResult = sse_decode_opt_box_autoadd_folder_scan_result(
+      deserializer,
+    );
+    return ScanProgress(
+      totalToProcess: var_totalToProcess,
+      processed: var_processed,
+      imageScanResults: var_imageScanResults,
+      folderScanResult: var_folderScanResult,
+    );
   }
 
   @protected
   int sse_decode_u_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint32();
+  }
+
+  @protected
+  BigInt sse_decode_u_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getBigUint64();
   }
 
   @protected
@@ -728,6 +863,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_Map_String_u_64_None(
+    Map<String, BigInt> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_record_string_u_64(
+      self.entries.map((e) => (e.key, e.value)).toList(),
+      serializer,
+    );
+  }
+
+  @protected
   void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDataReader(
     DataReader self,
@@ -764,17 +911,51 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_folder_scan_result(
+    FolderScanResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_folder_scan_result(self, serializer);
+  }
+
+  @protected
+  void sse_encode_folder_scan_result(
+    FolderScanResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.folderPath, serializer);
+    sse_encode_u_64(self.scanTimestamp, serializer);
+    sse_encode_u_32(self.totalImageCount, serializer);
+  }
+
+  @protected
   void sse_encode_i_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putInt32(self);
   }
 
   @protected
-  void sse_encode_list_String(List<String> self, SseSerializer serializer) {
+  void sse_encode_image_scan_result(
+    ImageScanResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.filePath, serializer);
+    sse_encode_u_64(self.fileLastModified, serializer);
+    sse_encode_String(self.metadataText, serializer);
+  }
+
+  @protected
+  void sse_encode_list_image_scan_result(
+    List<ImageScanResult> self,
+    SseSerializer serializer,
+  ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
-      sse_encode_String(item, serializer);
+      sse_encode_image_scan_result(item, serializer);
     }
   }
 
@@ -801,16 +982,75 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_record_string_u_64(
+    List<(String, BigInt)> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_record_string_u_64(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_folder_scan_result(
+    FolderScanResult? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_folder_scan_result(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_list_image_scan_result(
+    List<ImageScanResult>? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_list_image_scan_result(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_record_string_u_64(
+    (String, BigInt) self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.$1, serializer);
+    sse_encode_u_64(self.$2, serializer);
+  }
+
+  @protected
   void sse_encode_scan_progress(ScanProgress self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_u_32(self.total, serializer);
+    sse_encode_u_32(self.totalToProcess, serializer);
     sse_encode_u_32(self.processed, serializer);
+    sse_encode_opt_list_image_scan_result(self.imageScanResults, serializer);
+    sse_encode_opt_box_autoadd_folder_scan_result(
+      self.folderScanResult,
+      serializer,
+    );
   }
 
   @protected
   void sse_encode_u_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint32(self);
+  }
+
+  @protected
+  void sse_encode_u_64(BigInt self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putBigUint64(self);
   }
 
   @protected

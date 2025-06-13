@@ -6,37 +6,94 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `process_and_save_single_image`
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `ProcessingResult`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`
+// These functions are ignored because they are not marked as `pub`: `process_single_image`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`
 
-Stream<ScanProgress> scanFolders({
-  required List<String> folders,
-  required String dbPath,
-  required String thumbnailDir,
-}) => RustLib.instance.api.crateApiScanScanFolders(
-  folders: folders,
-  dbPath: dbPath,
-  thumbnailDir: thumbnailDir,
+Stream<ScanProgress> scanFolder({
+  required String folderPath,
+  required Map<String, BigInt> existingImages,
+}) => RustLib.instance.api.crateApiScanScanFolder(
+  folderPath: folderPath,
+  existingImages: existingImages,
 );
 
-String greet({required String name}) =>
-    RustLib.instance.api.crateApiScanGreet(name: name);
+class FolderScanResult {
+  final String folderPath;
+  final BigInt scanTimestamp;
+  final int totalImageCount;
 
-class ScanProgress {
-  final int total;
-  final int processed;
-
-  const ScanProgress({required this.total, required this.processed});
+  const FolderScanResult({
+    required this.folderPath,
+    required this.scanTimestamp,
+    required this.totalImageCount,
+  });
 
   @override
-  int get hashCode => total.hashCode ^ processed.hashCode;
+  int get hashCode =>
+      folderPath.hashCode ^ scanTimestamp.hashCode ^ totalImageCount.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FolderScanResult &&
+          runtimeType == other.runtimeType &&
+          folderPath == other.folderPath &&
+          scanTimestamp == other.scanTimestamp &&
+          totalImageCount == other.totalImageCount;
+}
+
+class ImageScanResult {
+  final String filePath;
+  final BigInt fileLastModified;
+  final String metadataText;
+
+  const ImageScanResult({
+    required this.filePath,
+    required this.fileLastModified,
+    required this.metadataText,
+  });
+
+  @override
+  int get hashCode =>
+      filePath.hashCode ^ fileLastModified.hashCode ^ metadataText.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ImageScanResult &&
+          runtimeType == other.runtimeType &&
+          filePath == other.filePath &&
+          fileLastModified == other.fileLastModified &&
+          metadataText == other.metadataText;
+}
+
+class ScanProgress {
+  final int totalToProcess;
+  final int processed;
+  final List<ImageScanResult>? imageScanResults;
+  final FolderScanResult? folderScanResult;
+
+  const ScanProgress({
+    required this.totalToProcess,
+    required this.processed,
+    this.imageScanResults,
+    this.folderScanResult,
+  });
+
+  @override
+  int get hashCode =>
+      totalToProcess.hashCode ^
+      processed.hashCode ^
+      imageScanResults.hashCode ^
+      folderScanResult.hashCode;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ScanProgress &&
           runtimeType == other.runtimeType &&
-          total == other.total &&
-          processed == other.processed;
+          totalToProcess == other.totalToProcess &&
+          processed == other.processed &&
+          imageScanResults == other.imageScanResults &&
+          folderScanResult == other.folderScanResult;
 }

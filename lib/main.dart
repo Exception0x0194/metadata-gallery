@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'src/rust/frb_generated.dart';
 import 'src/services/database_service.dart';
@@ -71,15 +70,15 @@ Future<void> setupLocators() async {
   final databaseService = DatabaseService();
   await databaseService.initialize();
   getIt.registerSingleton(databaseService);
-
-  // Initialize user preferences
-  final prefs = await SharedPreferences.getInstance();
-  getIt.registerSingleton(prefs);
 }
 
 void setupViewmodels() {
-  final getIt = GetIt.instance;
+  DatabaseService dbService = GetIt.I();
 
-  getIt.registerLazySingleton(() => HomePageViewmodel());
-  getIt.registerLazySingleton(() => SettingsPageViewmodel());
+  final homePageViewmodel = HomePageViewmodel();
+  GetIt.I.registerSingleton(homePageViewmodel);
+
+  final settingsPageViewmodel = SettingsPageViewmodel();
+  dbService.addListener(() => settingsPageViewmodel.onDatabaseChanged());
+  GetIt.I.registerSingleton(settingsPageViewmodel);
 }

@@ -3,35 +3,32 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../src/core/constants.dart';
+import '../../src/models/scanned_folder.dart';
+import '../../src/services/database_service.dart';
 
-class SettingsPageViewmodel extends ChangeNotifier {
-  SharedPreferences get prefs => GetIt.I();
+class SettingsPageViewmodel with ChangeNotifier {
+  DatabaseService get dbService => GetIt.I();
 
-  List<String>? get foldersToScan => prefs.getStringList(foldersToScanKey);
+  List<ScannedFolder> get foldersToScan => dbService.folders;
 
-  Future<void> setFoldersToScan(List<String> folders) async {
-    await prefs.setStringList(foldersToScanKey, folders);
-    notifyListeners();
-  }
+  void onDatabaseChanged() => notifyListeners();
 
   Future<void> browseAndAddFolder() async {
     final pickResult = await FilePicker.platform.getDirectoryPath();
     if (pickResult == null) return;
-    final folders = foldersToScan ?? [];
-    if (folders.contains(pickResult)) return;
-    folders.add(pickResult);
-    await prefs.setStringList(foldersToScanKey, folders);
+
+    final folders = foldersToScan;
+    if (folders.any((f) => f.path == pickResult)) return;
+
+    dbService.updateFolder(ScannedFolder(path: pickResult));
     notifyListeners();
   }
 
   Future<void> removeFolderToScan(int index) async {
-    final folders = foldersToScan ?? [];
+    final folders = foldersToScan;
     if (index >= folders.length) return;
-    folders.removeAt(index);
-    await prefs.setStringList(foldersToScanKey, folders);
+    dbService.removeFolder(folders[index]);
     notifyListeners();
   }
 

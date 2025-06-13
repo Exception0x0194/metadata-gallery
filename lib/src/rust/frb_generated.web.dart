@@ -42,6 +42,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  Map<String, BigInt> dco_decode_Map_String_u_64_None(dynamic raw);
+
+  @protected
   DataReader
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDataReader(
     dynamic raw,
@@ -56,10 +59,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String dco_decode_String(dynamic raw);
 
   @protected
+  FolderScanResult dco_decode_box_autoadd_folder_scan_result(dynamic raw);
+
+  @protected
+  FolderScanResult dco_decode_folder_scan_result(dynamic raw);
+
+  @protected
   int dco_decode_i_32(dynamic raw);
 
   @protected
-  List<String> dco_decode_list_String(dynamic raw);
+  ImageScanResult dco_decode_image_scan_result(dynamic raw);
+
+  @protected
+  List<ImageScanResult> dco_decode_list_image_scan_result(dynamic raw);
 
   @protected
   List<int> dco_decode_list_prim_u_8_loose(dynamic raw);
@@ -68,10 +80,25 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  List<(String, BigInt)> dco_decode_list_record_string_u_64(dynamic raw);
+
+  @protected
+  FolderScanResult? dco_decode_opt_box_autoadd_folder_scan_result(dynamic raw);
+
+  @protected
+  List<ImageScanResult>? dco_decode_opt_list_image_scan_result(dynamic raw);
+
+  @protected
+  (String, BigInt) dco_decode_record_string_u_64(dynamic raw);
+
+  @protected
   ScanProgress dco_decode_scan_progress(dynamic raw);
 
   @protected
   int dco_decode_u_32(dynamic raw);
+
+  @protected
+  BigInt dco_decode_u_64(dynamic raw);
 
   @protected
   int dco_decode_u_8(dynamic raw);
@@ -98,6 +125,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  Map<String, BigInt> sse_decode_Map_String_u_64_None(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   DataReader
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDataReader(
     SseDeserializer deserializer,
@@ -112,10 +144,23 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
+  FolderScanResult sse_decode_box_autoadd_folder_scan_result(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  FolderScanResult sse_decode_folder_scan_result(SseDeserializer deserializer);
+
+  @protected
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
-  List<String> sse_decode_list_String(SseDeserializer deserializer);
+  ImageScanResult sse_decode_image_scan_result(SseDeserializer deserializer);
+
+  @protected
+  List<ImageScanResult> sse_decode_list_image_scan_result(
+    SseDeserializer deserializer,
+  );
 
   @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer);
@@ -124,10 +169,31 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  List<(String, BigInt)> sse_decode_list_record_string_u_64(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  FolderScanResult? sse_decode_opt_box_autoadd_folder_scan_result(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<ImageScanResult>? sse_decode_opt_list_image_scan_result(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  (String, BigInt) sse_decode_record_string_u_64(SseDeserializer deserializer);
+
+  @protected
   ScanProgress sse_decode_scan_progress(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_32(SseDeserializer deserializer);
+
+  @protected
+  BigInt sse_decode_u_64(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_8(SseDeserializer deserializer);
@@ -162,6 +228,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_Map_String_u_64_None(
+    Map<String, BigInt> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDataReader(
     DataReader self,
@@ -178,10 +250,31 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_folder_scan_result(
+    FolderScanResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_folder_scan_result(
+    FolderScanResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
 
   @protected
-  void sse_encode_list_String(List<String> self, SseSerializer serializer);
+  void sse_encode_image_scan_result(
+    ImageScanResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_image_scan_result(
+    List<ImageScanResult> self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_list_prim_u_8_loose(List<int> self, SseSerializer serializer);
@@ -193,10 +286,37 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_record_string_u_64(
+    List<(String, BigInt)> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_folder_scan_result(
+    FolderScanResult? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_list_image_scan_result(
+    List<ImageScanResult>? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_record_string_u_64(
+    (String, BigInt) self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_scan_progress(ScanProgress self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_32(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_64(BigInt self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_8(int self, SseSerializer serializer);

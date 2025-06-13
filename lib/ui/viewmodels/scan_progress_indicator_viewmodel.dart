@@ -1,15 +1,30 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-import '../../src/rust/api/scan.dart';
-
 class ScanProgressIndicatorViewmodel extends ChangeNotifier {
-  Stream<ScanProgress>? _progress;
+  bool hidden = true;
+  bool isDone = true;
+  int total = 0;
+  double progress = 0.0;
 
-  Stream<ScanProgress>? get progress => _progress;
-
-  /// 设置一个新的进度流，并通知监听者
-  void setProgress(Stream<ScanProgress>? newProgress) {
-    _progress = newProgress;
+  void setProgress(int totalScanned, double currentProgress) {
+    isDone = false;
+    hidden = false;
+    progress = currentProgress;
+    total = totalScanned;
     notifyListeners();
+  }
+
+  void setDone(int totalScanned) {
+    isDone = true;
+    hidden = false;
+    total = totalScanned;
+    notifyListeners();
+    Timer(Duration(seconds: 2), () {
+      if (!isDone) return;
+      hidden = true;
+      notifyListeners();
+    });
   }
 }
