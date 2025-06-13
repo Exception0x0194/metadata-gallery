@@ -45,12 +45,12 @@ class FolderScanResult {
 class ImageScanResult {
   final String filePath;
   final BigInt fileLastModified;
-  final String metadataText;
+  final String? metadataText;
 
   const ImageScanResult({
     required this.filePath,
     required this.fileLastModified,
-    required this.metadataText,
+    this.metadataText,
   });
 
   @override

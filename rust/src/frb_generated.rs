@@ -515,7 +515,7 @@ impl SseDecode for crate::api::scan::ImageScanResult {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_filePath = <String>::sse_decode(deserializer);
         let mut var_fileLastModified = <u64>::sse_decode(deserializer);
-        let mut var_metadataText = <String>::sse_decode(deserializer);
+        let mut var_metadataText = <Option<String>>::sse_decode(deserializer);
         return crate::api::scan::ImageScanResult {
             file_path: var_filePath,
             file_last_modified: var_fileLastModified,
@@ -559,6 +559,17 @@ impl SseDecode for Vec<(String, u64)> {
             ans_.push(<(String, u64)>::sse_decode(deserializer));
         }
         return ans_;
+    }
+}
+
+impl SseDecode for Option<String> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<String>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
     }
 }
 
@@ -857,7 +868,7 @@ impl SseEncode for crate::api::scan::ImageScanResult {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.file_path, serializer);
         <u64>::sse_encode(self.file_last_modified, serializer);
-        <String>::sse_encode(self.metadata_text, serializer);
+        <Option<String>>::sse_encode(self.metadata_text, serializer);
     }
 }
 
@@ -887,6 +898,16 @@ impl SseEncode for Vec<(String, u64)> {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <(String, u64)>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<String> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <String>::sse_encode(value, serializer);
         }
     }
 }

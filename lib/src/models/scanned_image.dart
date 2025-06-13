@@ -1,7 +1,7 @@
 class ScannedImage {
   final String filePath;
   final BigInt lastModieied;
-  final String metadataString;
+  final String? metadataString;
 
   ScannedImage({
     required this.filePath,

@@ -23,7 +23,7 @@ pub struct ScanProgress {
 pub struct ImageScanResult {
     pub file_path: String,
     pub file_last_modified: u64,
-    pub metadata_text: String,
+    pub metadata_text: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -44,12 +44,12 @@ fn process_single_image(image_path: &str) -> Result<ImageScanResult, Error> {
     let file_last_modified = modified_time.duration_since(UNIX_EPOCH)?.as_secs();
 
     // 提取数据
-    let metadata_text = extract_metadata(&file_bytes)?;
+    let metadata_text = extract_metadata(&file_bytes);
 
     Ok(ImageScanResult {
         file_path: image_path.to_string(),
         file_last_modified: file_last_modified,
-        metadata_text: metadata_text,
+        metadata_text: metadata_text.ok(),
     })
 }
 
