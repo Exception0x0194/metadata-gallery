@@ -24,7 +24,10 @@ class _ImageCardState extends State<ImageCard> {
       onDoubleTap: () => locateFile(),
       child: Card(
         margin: EdgeInsets.all(8.0),
-        child: Image.file(thumbFile, cacheWidth: 512),
+        child: AspectRatio(
+          aspectRatio: image.aspectRatio!,
+          child: Image.file(thumbFile, cacheWidth: 512),
+        ),
       ),
     );
   }

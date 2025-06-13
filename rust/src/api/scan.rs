@@ -23,6 +23,7 @@ pub struct ScanProgress {
 pub struct ImageScanResult {
     pub file_path: String,
     pub file_last_modified: u64,
+    pub image_aspect_ratio: Option<f64>,
     pub metadata_text: Option<String>,
 }
 
@@ -33,7 +34,7 @@ pub struct FolderScanResult {
     pub total_image_count: u32,
 }
 
-// 处理单个图片的函数，保存缩略图并返回处理结果
+// 处理单个图片的函数
 fn process_single_image(image_path: &str) -> Result<ImageScanResult, Error> {
     // 读取文件内容
     let mut file = File::open(image_path)?;
@@ -44,12 +45,22 @@ fn process_single_image(image_path: &str) -> Result<ImageScanResult, Error> {
     let file_last_modified = modified_time.duration_since(UNIX_EPOCH)?.as_secs();
 
     // 提取数据
-    let metadata_text = extract_metadata(&file_bytes);
+    let metadata_result = extract_metadata(&file_bytes);
+    if metadata_result.is_ok() {
+        let data = metadata_result.unwrap();
+        return Ok(ImageScanResult {
+            file_path: image_path.to_string(),
+            file_last_modified: file_last_modified,
+            image_aspect_ratio: Some(data.aspect_ratio),
+            metadata_text: data.metadata_string,
+        });
+    }
 
     Ok(ImageScanResult {
         file_path: image_path.to_string(),
         file_last_modified: file_last_modified,
-        metadata_text: metadata_text.ok(),
+        image_aspect_ratio: None,
+        metadata_text: None,
     })
 }
 

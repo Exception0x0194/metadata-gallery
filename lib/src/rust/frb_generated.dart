@@ -90,7 +90,7 @@ abstract class RustLibApi extends BaseApi {
 
   Future<int> crateApiMetadataDataReaderReadInt32({required DataReader that});
 
-  String crateApiMetadataExtractMetadata({required List<int> inputBytes});
+  ImageInfo crateApiMetadataExtractMetadata({required List<int> inputBytes});
 
   String crateApiSimpleGreet({required String name});
 
@@ -285,7 +285,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  String crateApiMetadataExtractMetadata({required List<int> inputBytes}) {
+  ImageInfo crateApiMetadataExtractMetadata({required List<int> inputBytes}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
@@ -294,7 +294,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 6)!;
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_String,
+          decodeSuccessData: sse_decode_image_info,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiMetadataExtractMetadataConstMeta,
@@ -463,9 +463,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  double dco_decode_box_autoadd_f_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as double;
+  }
+
+  @protected
   FolderScanResult dco_decode_box_autoadd_folder_scan_result(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_folder_scan_result(raw);
+  }
+
+  @protected
+  double dco_decode_f_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as double;
   }
 
   @protected
@@ -488,15 +500,28 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ImageInfo dco_decode_image_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return ImageInfo(
+      aspectRatio: dco_decode_f_64(arr[0]),
+      metadataString: dco_decode_opt_String(arr[1]),
+    );
+  }
+
+  @protected
   ImageScanResult dco_decode_image_scan_result(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 3)
-      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
     return ImageScanResult(
       filePath: dco_decode_String(arr[0]),
       fileLastModified: dco_decode_u_64(arr[1]),
-      metadataText: dco_decode_opt_String(arr[2]),
+      imageAspectRatio: dco_decode_opt_box_autoadd_f_64(arr[2]),
+      metadataText: dco_decode_opt_String(arr[3]),
     );
   }
 
@@ -528,6 +553,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   String? dco_decode_opt_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_String(raw);
+  }
+
+  @protected
+  double? dco_decode_opt_box_autoadd_f_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_f_64(raw);
   }
 
   @protected
@@ -664,11 +695,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  double sse_decode_box_autoadd_f_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_f_64(deserializer));
+  }
+
+  @protected
   FolderScanResult sse_decode_box_autoadd_folder_scan_result(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_folder_scan_result(deserializer));
+  }
+
+  @protected
+  double sse_decode_f_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getFloat64();
   }
 
   @protected
@@ -691,14 +734,27 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ImageInfo sse_decode_image_info(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_aspectRatio = sse_decode_f_64(deserializer);
+    var var_metadataString = sse_decode_opt_String(deserializer);
+    return ImageInfo(
+      aspectRatio: var_aspectRatio,
+      metadataString: var_metadataString,
+    );
+  }
+
+  @protected
   ImageScanResult sse_decode_image_scan_result(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_filePath = sse_decode_String(deserializer);
     var var_fileLastModified = sse_decode_u_64(deserializer);
+    var var_imageAspectRatio = sse_decode_opt_box_autoadd_f_64(deserializer);
     var var_metadataText = sse_decode_opt_String(deserializer);
     return ImageScanResult(
       filePath: var_filePath,
       fileLastModified: var_fileLastModified,
+      imageAspectRatio: var_imageAspectRatio,
       metadataText: var_metadataText,
     );
   }
@@ -751,6 +807,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_String(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  double? sse_decode_opt_box_autoadd_f_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_f_64(deserializer));
     } else {
       return null;
     }
@@ -928,12 +995,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_f_64(double self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_f_64(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_folder_scan_result(
     FolderScanResult self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_folder_scan_result(self, serializer);
+  }
+
+  @protected
+  void sse_encode_f_64(double self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putFloat64(self);
   }
 
   @protected
@@ -954,6 +1033,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_image_info(ImageInfo self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_f_64(self.aspectRatio, serializer);
+    sse_encode_opt_String(self.metadataString, serializer);
+  }
+
+  @protected
   void sse_encode_image_scan_result(
     ImageScanResult self,
     SseSerializer serializer,
@@ -961,6 +1047,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.filePath, serializer);
     sse_encode_u_64(self.fileLastModified, serializer);
+    sse_encode_opt_box_autoadd_f_64(self.imageAspectRatio, serializer);
     sse_encode_opt_String(self.metadataText, serializer);
   }
 
@@ -1017,6 +1104,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_String(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_f_64(double? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_f_64(self, serializer);
     }
   }
 

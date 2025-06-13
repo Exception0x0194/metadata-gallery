@@ -45,17 +45,22 @@ class FolderScanResult {
 class ImageScanResult {
   final String filePath;
   final BigInt fileLastModified;
+  final double? imageAspectRatio;
   final String? metadataText;
 
   const ImageScanResult({
     required this.filePath,
     required this.fileLastModified,
+    this.imageAspectRatio,
     this.metadataText,
   });
 
   @override
   int get hashCode =>
-      filePath.hashCode ^ fileLastModified.hashCode ^ metadataText.hashCode;
+      filePath.hashCode ^
+      fileLastModified.hashCode ^
+      imageAspectRatio.hashCode ^
+      metadataText.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -64,6 +69,7 @@ class ImageScanResult {
           runtimeType == other.runtimeType &&
           filePath == other.filePath &&
           fileLastModified == other.fileLastModified &&
+          imageAspectRatio == other.imageAspectRatio &&
           metadataText == other.metadataText;
 }
 

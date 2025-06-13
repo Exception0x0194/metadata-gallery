@@ -5,14 +5,25 @@ use flate2::read::GzDecoder;
 use flutter_rust_bridge::frb;
 use image::GenericImageView;
 
+pub struct ImageInfo {
+    pub aspect_ratio: f64,
+    pub metadata_string: Option<String>,
+}
+
 #[flutter_rust_bridge::frb(sync)]
-pub fn extract_metadata(input_bytes: &[u8]) -> Result<String, Error> {
-    let exif_data_result = extract_exif(input_bytes);
-    if (exif_data_result.is_ok()) {
-        return exif_data_result;
+pub fn extract_metadata(input_bytes: &[u8]) -> Result<ImageInfo, Error> {
+    let exif_info = extract_exif(input_bytes)?;
+    if (exif_info.metadata_string.is_some()) {
+        return Ok(exif_info);
     }
-    let nai_data_result = extract_nai_data(input_bytes);
-    return nai_data_result;
+    let nai_metadata_result = extract_nai_data(input_bytes);
+    if nai_metadata_result.is_ok() {
+        return Ok(ImageInfo {
+            aspect_ratio: exif_info.aspect_ratio,
+            metadata_string: nai_metadata_result.ok(),
+        });
+    }
+    return Ok(exif_info);
 }
 
 #[frb(opaque)]
@@ -82,7 +93,7 @@ fn extract_nai_data(input_bytes: &[u8]) -> Result<String, Error> {
     }
 }
 
-fn extract_exif(input_bytes: &[u8]) -> Result<String, Error> {
+fn extract_exif(input_bytes: &[u8]) -> Result<ImageInfo, Error> {
     // 使用 infer 判断文件类型
     let kind =
         infer::get(input_bytes).ok_or_else(|| anyhow!("无法识别的文件类型 (Unknown file type)"))?;
@@ -95,15 +106,29 @@ fn extract_exif(input_bytes: &[u8]) -> Result<String, Error> {
             let decoder = png::Decoder::new(Cursor::new(input_bytes));
             let reader = decoder.read_info()?;
 
-            // 只检查 iTXt 和 tEXt，读取第一个找到的
             let info = reader.info();
+            // 获取长宽比
+            let width = info.width as f64;
+            let height = info.height as f64;
+            let aspect_ratio = width / height;
+
+            // 只检查 iTXt 和 tEXt，读取第一个找到的
             for itxt_chunk in &info.utf8_text {
-                return Ok(itxt_chunk.get_text()?);
+                return Ok(ImageInfo {
+                    aspect_ratio: aspect_ratio,
+                    metadata_string: itxt_chunk.get_text().ok(),
+                });
             }
             for text_chunk in &info.uncompressed_latin1_text {
-                return Ok(text_chunk.text.clone());
+                return Ok(ImageInfo {
+                    aspect_ratio: aspect_ratio,
+                    metadata_string: Some(text_chunk.text.clone()),
+                });
             }
-            Err(anyhow!("iTXt or tEXt chunk not found"))
+            return Ok(ImageInfo {
+                aspect_ratio: aspect_ratio,
+                metadata_string: None,
+            });
         }
 
         // 其他不支持的类型 (JPG, TIFF, AVIF, etc.)

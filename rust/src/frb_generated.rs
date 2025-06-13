@@ -489,6 +489,13 @@ impl SseDecode for String {
     }
 }
 
+impl SseDecode for f64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_f64::<NativeEndian>().unwrap()
+    }
+}
+
 impl SseDecode for crate::api::scan::FolderScanResult {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -510,15 +517,29 @@ impl SseDecode for i32 {
     }
 }
 
+impl SseDecode for crate::api::metadata::ImageInfo {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_aspectRatio = <f64>::sse_decode(deserializer);
+        let mut var_metadataString = <Option<String>>::sse_decode(deserializer);
+        return crate::api::metadata::ImageInfo {
+            aspect_ratio: var_aspectRatio,
+            metadata_string: var_metadataString,
+        };
+    }
+}
+
 impl SseDecode for crate::api::scan::ImageScanResult {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_filePath = <String>::sse_decode(deserializer);
         let mut var_fileLastModified = <u64>::sse_decode(deserializer);
+        let mut var_imageAspectRatio = <Option<f64>>::sse_decode(deserializer);
         let mut var_metadataText = <Option<String>>::sse_decode(deserializer);
         return crate::api::scan::ImageScanResult {
             file_path: var_filePath,
             file_last_modified: var_fileLastModified,
+            image_aspect_ratio: var_imageAspectRatio,
             metadata_text: var_metadataText,
         };
     }
@@ -567,6 +588,17 @@ impl SseDecode for Option<String> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<String>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<f64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<f64>::sse_decode(deserializer));
         } else {
             return None;
         }
@@ -754,11 +786,33 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::scan::FolderScanResult>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::metadata::ImageInfo {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.aspect_ratio.into_into_dart().into_dart(),
+            self.metadata_string.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::metadata::ImageInfo
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::metadata::ImageInfo>
+    for crate::api::metadata::ImageInfo
+{
+    fn into_into_dart(self) -> crate::api::metadata::ImageInfo {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::scan::ImageScanResult {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.file_path.into_into_dart().into_dart(),
             self.file_last_modified.into_into_dart().into_dart(),
+            self.image_aspect_ratio.into_into_dart().into_dart(),
             self.metadata_text.into_into_dart().into_dart(),
         ]
         .into_dart()
@@ -847,6 +901,13 @@ impl SseEncode for String {
     }
 }
 
+impl SseEncode for f64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_f64::<NativeEndian>(self).unwrap();
+    }
+}
+
 impl SseEncode for crate::api::scan::FolderScanResult {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -863,11 +924,20 @@ impl SseEncode for i32 {
     }
 }
 
+impl SseEncode for crate::api::metadata::ImageInfo {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <f64>::sse_encode(self.aspect_ratio, serializer);
+        <Option<String>>::sse_encode(self.metadata_string, serializer);
+    }
+}
+
 impl SseEncode for crate::api::scan::ImageScanResult {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.file_path, serializer);
         <u64>::sse_encode(self.file_last_modified, serializer);
+        <Option<f64>>::sse_encode(self.image_aspect_ratio, serializer);
         <Option<String>>::sse_encode(self.metadata_text, serializer);
     }
 }
@@ -908,6 +978,16 @@ impl SseEncode for Option<String> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <String>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<f64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <f64>::sse_encode(value, serializer);
         }
     }
 }

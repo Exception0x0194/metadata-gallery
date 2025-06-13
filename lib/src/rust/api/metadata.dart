@@ -8,7 +8,9 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `extract_exif`, `extract_nai_data`
 
-String extractMetadata({required List<int> inputBytes}) => RustLib.instance.api
+ImageInfo extractMetadata({required List<int> inputBytes}) => RustLib
+    .instance
+    .api
     .crateApiMetadataExtractMetadata(inputBytes: inputBytes);
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<DataReader>>
@@ -24,4 +26,22 @@ abstract class DataReader implements RustOpaqueInterface {
   Future<Uint8List> readBytes({required BigInt n});
 
   Future<int> readInt32();
+}
+
+class ImageInfo {
+  final double aspectRatio;
+  final String? metadataString;
+
+  const ImageInfo({required this.aspectRatio, this.metadataString});
+
+  @override
+  int get hashCode => aspectRatio.hashCode ^ metadataString.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ImageInfo &&
+          runtimeType == other.runtimeType &&
+          aspectRatio == other.aspectRatio &&
+          metadataString == other.metadataString;
 }

@@ -59,13 +59,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String dco_decode_String(dynamic raw);
 
   @protected
+  double dco_decode_box_autoadd_f_64(dynamic raw);
+
+  @protected
   FolderScanResult dco_decode_box_autoadd_folder_scan_result(dynamic raw);
+
+  @protected
+  double dco_decode_f_64(dynamic raw);
 
   @protected
   FolderScanResult dco_decode_folder_scan_result(dynamic raw);
 
   @protected
   int dco_decode_i_32(dynamic raw);
+
+  @protected
+  ImageInfo dco_decode_image_info(dynamic raw);
 
   @protected
   ImageScanResult dco_decode_image_scan_result(dynamic raw);
@@ -84,6 +93,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   String? dco_decode_opt_String(dynamic raw);
+
+  @protected
+  double? dco_decode_opt_box_autoadd_f_64(dynamic raw);
 
   @protected
   FolderScanResult? dco_decode_opt_box_autoadd_folder_scan_result(dynamic raw);
@@ -147,15 +159,24 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
+  double sse_decode_box_autoadd_f_64(SseDeserializer deserializer);
+
+  @protected
   FolderScanResult sse_decode_box_autoadd_folder_scan_result(
     SseDeserializer deserializer,
   );
+
+  @protected
+  double sse_decode_f_64(SseDeserializer deserializer);
 
   @protected
   FolderScanResult sse_decode_folder_scan_result(SseDeserializer deserializer);
 
   @protected
   int sse_decode_i_32(SseDeserializer deserializer);
+
+  @protected
+  ImageInfo sse_decode_image_info(SseDeserializer deserializer);
 
   @protected
   ImageScanResult sse_decode_image_scan_result(SseDeserializer deserializer);
@@ -178,6 +199,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
+
+  @protected
+  double? sse_decode_opt_box_autoadd_f_64(SseDeserializer deserializer);
 
   @protected
   FolderScanResult? sse_decode_opt_box_autoadd_folder_scan_result(
@@ -256,10 +280,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_f_64(double self, SseSerializer serializer);
+
+  @protected
   void sse_encode_box_autoadd_folder_scan_result(
     FolderScanResult self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_f_64(double self, SseSerializer serializer);
 
   @protected
   void sse_encode_folder_scan_result(
@@ -269,6 +299,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_image_info(ImageInfo self, SseSerializer serializer);
 
   @protected
   void sse_encode_image_scan_result(
@@ -299,6 +332,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_f_64(double? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_box_autoadd_folder_scan_result(

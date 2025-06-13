@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
@@ -24,6 +25,7 @@ class DatabaseService with ChangeNotifier {
   static const String _colFilePath = 'file_path';
   static const String _colMetadataText = 'metadata_text';
   static const String _colLastModified = 'last_modified';
+  static const String _colAspectRatio = 'aspect_ratio';
 
   static const String _folderTableName = 'folders';
   static const String _colFolderPath = 'folder_path';
@@ -44,7 +46,12 @@ class DatabaseService with ChangeNotifier {
       throw UnsupportedError("不支持的平台：${Platform.operatingSystem}");
     }
     databaseFactory = databaseFactoryFfi;
-    _database = await openDatabase(dbPath, version: 1, onOpen: _onOpen);
+    _database = await openDatabase(
+      dbPath,
+      version: 2,
+      onOpen: _onOpen,
+      onUpgrade: _onUpgrade,
+    );
 
     _folders = await _loadFoldersFromDb();
     notifyListeners();
@@ -55,7 +62,8 @@ class DatabaseService with ChangeNotifier {
       CREATE TABLE IF NOT EXISTS $_imageTableName (
         $_colFilePath TEXT PRIMARY KEY,
         $_colMetadataText TEXT,
-        $_colLastModified INTEGER
+        $_colLastModified INTEGER,
+        $_colAspectRatio REAL
       )
     ''');
     await db.execute('''
@@ -67,12 +75,30 @@ class DatabaseService with ChangeNotifier {
     ''');
   }
 
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    var version = oldVersion;
+    if (version == 1) {
+      // Added aspect ratio column, so need to clear all image data
+      await db.execute('DROP TABLE $_imageTableName');
+      await db.update(_folderTableName, {
+        _colImageCount: null,
+        _colLastScanned: null,
+      });
+      version += 1;
+    }
+  }
+
   Future<List<ScannedImage>> queryImagesByKeyword(String keyword) async {
     // 使用 LIKE 操作符进行模糊查询
     // %keyword% 表示匹配任何包含 keyword 的字符串
     final List<Map<String, dynamic>> maps = await db.query(
       _imageTableName,
-      columns: [_colFilePath, _colMetadataText, _colLastModified],
+      columns: [
+        _colFilePath,
+        _colMetadataText,
+        _colLastModified,
+        _colAspectRatio,
+      ],
       where: '$_colMetadataText NOT NULL AND $_colMetadataText LIKE ?',
       whereArgs: ['%$keyword%'],
     );
@@ -82,6 +108,7 @@ class DatabaseService with ChangeNotifier {
       return ScannedImage(
         filePath: maps[i][_colFilePath],
         metadataString: maps[i][_colMetadataText],
+        aspectRatio: maps[i][_colAspectRatio],
         lastModieied: BigInt.from(maps[i][_colLastModified]),
       );
     });
@@ -90,13 +117,19 @@ class DatabaseService with ChangeNotifier {
   Future<List<ScannedImage>> getAllImages() async {
     final List<Map<String, dynamic>> maps = await db.query(
       _imageTableName,
-      columns: [_colFilePath, _colMetadataText, _colLastModified],
+      columns: [
+        _colFilePath,
+        _colMetadataText,
+        _colLastModified,
+        _colAspectRatio,
+      ],
     );
     return List.generate(
       maps.length,
       (i) => ScannedImage(
         filePath: maps[i][_colFilePath],
         metadataString: maps[i][_colMetadataText],
+        aspectRatio: maps[i][_colAspectRatio],
         lastModieied: BigInt.from(maps[i][_colLastModified]),
       ),
     );
@@ -108,6 +141,7 @@ class DatabaseService with ChangeNotifier {
       batch.insert(_imageTableName, {
         _colFilePath: img.filePath,
         _colMetadataText: img.metadataString,
+        _colAspectRatio: img.aspectRatio,
         _colLastModified: img.lastModieied.toInt(),
       }, conflictAlgorithm: ConflictAlgorithm.replace);
     }

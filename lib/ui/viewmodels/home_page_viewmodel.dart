@@ -62,6 +62,7 @@ class HomePageViewmodel extends ChangeNotifier {
               (idx) => ScannedImage(
                 filePath: results[idx].filePath,
                 lastModieied: results[idx].fileLastModified,
+                aspectRatio: results[idx].imageAspectRatio,
                 metadataString: results[idx].metadataText,
               ),
             ),
