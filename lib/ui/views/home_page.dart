@@ -35,30 +35,31 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: ListTile(
-              title: TextField(
-                controller: searchController,
-                focusNode: searchFocusNode,
-                onSubmitted: (keyword) => viewmodel.searchImages(keyword),
+    return ListenableBuilder(
+      listenable: viewmodel,
+      builder: (context, child) {
+        return Scaffold(
+          body: Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.all(8.0),
+                child: ListTile(
+                  title: TextField(
+                    controller: searchController,
+                    focusNode: searchFocusNode,
+                    onSubmitted: (keyword) => viewmodel.searchImages(keyword),
+                  ),
+                  subtitle: Text('检索的元数据内容'),
+                  trailing: IconButton(
+                    onPressed: () =>
+                        viewmodel.searchImages(searchController.text),
+                    icon: Icon(Icons.search_outlined),
+                  ),
+                ),
               ),
-              subtitle: Text('检索的元数据内容'),
-              trailing: IconButton(
-                onPressed: () => viewmodel.searchImages(searchController.text),
-                icon: Icon(Icons.waving_hand_outlined),
-              ),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32.0),
-            child: ListenableBuilder(
-              listenable: viewmodel,
-              builder: (context, child) {
-                return Row(
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 32.0),
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Text('排序依据：'),
@@ -74,40 +75,37 @@ class _HomePageState extends State<HomePage> {
                       onChanged: (value) => viewmodel.setReversed(value),
                     ),
                   ],
-                );
-              },
-            ),
-          ),
-          ListenableBuilder(
-            listenable: viewmodel,
-            builder: (context, child) => Expanded(
-              child: Stack(
-                alignment: AlignmentDirectional.topEnd,
-                children: [
-                  WaterfallFlow.builder(
-                    itemCount: viewmodel.searchResult.length,
-                    gridDelegate:
-                        SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                        ),
-                    itemBuilder: (context, idx) {
-                      return ImageCard(image: viewmodel.searchResult[idx]);
-                    },
-                  ),
-                  ScanProgressIndicator(
-                    viewmodel: viewmodel.scanProgressIndicatorViewmodel,
-                  ),
-                ],
+                ),
               ),
-            ),
+              Expanded(
+                child: Stack(
+                  alignment: AlignmentDirectional.topEnd,
+                  children: [
+                    WaterfallFlow.builder(
+                      itemCount: viewmodel.searchResult.length,
+                      gridDelegate:
+                          SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4,
+                          ),
+                      itemBuilder: (context, idx) {
+                        return ImageCard(image: viewmodel.searchResult[idx]);
+                      },
+                    ),
+                    ScanProgressIndicator(
+                      viewmodel: viewmodel.scanProgressIndicatorViewmodel,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
 
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => viewmodel.callScan(),
-        child: Icon(Icons.refresh_outlined),
-      ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () => viewmodel.callScan(),
+            child: Icon(Icons.refresh_outlined),
+          ),
+        );
+      },
     );
   }
 }

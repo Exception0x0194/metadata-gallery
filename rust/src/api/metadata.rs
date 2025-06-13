@@ -13,16 +13,15 @@ pub struct ImageInfo {
 #[flutter_rust_bridge::frb(sync)]
 pub fn extract_metadata(input_bytes: &[u8]) -> Result<ImageInfo, Error> {
     let exif_info = extract_exif(input_bytes)?;
-    if (exif_info.metadata_string.is_some()) {
-        return Ok(exif_info);
-    }
     let nai_metadata_result = extract_nai_data(input_bytes);
     if nai_metadata_result.is_ok() {
+        // Use NAI metadata string first
         return Ok(ImageInfo {
             aspect_ratio: exif_info.aspect_ratio,
             metadata_string: nai_metadata_result.ok(),
         });
     }
+    // Or fallback to EXIF metadata
     return Ok(exif_info);
 }
 
