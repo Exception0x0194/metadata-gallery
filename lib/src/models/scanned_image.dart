@@ -10,4 +10,6 @@ class ScannedImage {
     required this.aspectRatio,
     required this.metadataString,
   });
+
+  bool get isImage => aspectRatio != null; // Only images have aspect retio
 }

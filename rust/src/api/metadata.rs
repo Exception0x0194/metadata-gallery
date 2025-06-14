@@ -12,7 +12,7 @@ pub struct ImageInfo {
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn extract_metadata(input_bytes: &[u8]) -> Result<ImageInfo, Error> {
-    let exif_info = extract_exif(input_bytes)?;
+    let exif_info = extract_general_info(input_bytes)?;
     let nai_metadata_result = extract_nai_data(input_bytes);
     if nai_metadata_result.is_ok() {
         // Use NAI metadata string first
@@ -71,7 +71,7 @@ fn extract_nai_data(input_bytes: &[u8]) -> Result<String, Error> {
         for y in 0..height {
             let pixel = img.get_pixel(x, y);
             let a = pixel[3]; // 获取 alpha 值
-            lowest_data.push(a & 1);
+            lowest_data.push(a);
         }
     }
 
@@ -92,48 +92,56 @@ fn extract_nai_data(input_bytes: &[u8]) -> Result<String, Error> {
     }
 }
 
-fn extract_exif(input_bytes: &[u8]) -> Result<ImageInfo, Error> {
-    // 使用 infer 判断文件类型
+fn extract_general_info(input_bytes: &[u8]) -> Result<ImageInfo, Error> {
+    // 计算宽高比
+    let img = image::load_from_memory(input_bytes)?;
+    let (width, height) = img.dimensions();
+    if height == 0 {
+        return Err(anyhow!("图片高度为零 (Image height is zero)"));
+    }
+    let aspect_ratio = width as f64 / height as f64;
+
+    // 使用 infer 推断文件类型，选择性地提取元数据
     let kind =
         infer::get(input_bytes).ok_or_else(|| anyhow!("无法识别的文件类型 (Unknown file type)"))?;
-
     let mime_type = kind.mime_type();
 
-    match mime_type {
-        // 专门处理 PNG 文件
+    let metadata_string = match mime_type {
+        // 专门处理 PNG，读取文本块
         "image/png" => {
             let decoder = png::Decoder::new(Cursor::new(input_bytes));
-            let reader = decoder.read_info()?;
-
-            let info = reader.info();
-            // 获取长宽比
-            let width = info.width as f64;
-            let height = info.height as f64;
-            let aspect_ratio = width / height;
-
-            // 只检查 iTXt 和 tEXt，读取第一个找到的
-            for itxt_chunk in &info.utf8_text {
-                return Ok(ImageInfo {
-                    aspect_ratio: aspect_ratio,
-                    metadata_string: itxt_chunk.get_text().ok(),
-                });
-            }
-            for text_chunk in &info.uncompressed_latin1_text {
-                return Ok(ImageInfo {
-                    aspect_ratio: aspect_ratio,
-                    metadata_string: Some(text_chunk.text.clone()),
-                });
-            }
-            return Ok(ImageInfo {
-                aspect_ratio: aspect_ratio,
-                metadata_string: None,
-            });
+            decoder.read_info().ok().and_then(|reader| {
+                let info = reader.info();
+                info.utf8_text
+                    .iter()
+                    .find_map(|chunk| chunk.get_text().ok())
+                    .or_else(|| {
+                        info.uncompressed_latin1_text
+                            .iter()
+                            .map(|chunk| chunk.text.clone())
+                            .next()
+                    })
+            })
         }
 
-        // 其他不支持的类型 (JPG, TIFF, AVIF, etc.)
-        _ => Err(anyhow!(
-            "不支持的文件类型 (Unsupported file type): {}",
-            mime_type
-        )),
-    }
+        // 专门处理 JPEG 和 TIFF，读取 EXIF
+        "image/jpeg" | "image/tiff" => {
+            let mut cursor = Cursor::new(input_bytes);
+            exif::Reader::new()
+                .read_from_container(&mut cursor)
+                .ok()
+                .and_then(|exif| {
+                    exif.get_field(exif::Tag::ImageDescription, exif::In::PRIMARY)
+                        .and_then(|field| Some(field.display_value().to_string()))
+                })
+        }
+
+        // 其他支持的格式 (WEBP, GIF, BMP 等) 通常没有标准化的文本元数据字段，只返回宽高比
+        _ => None,
+    };
+
+    Ok(ImageInfo {
+        aspect_ratio,
+        metadata_string,
+    })
 }

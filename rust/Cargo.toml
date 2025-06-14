@@ -9,6 +9,7 @@ crate-type = ["cdylib", "staticlib"]
 [dependencies]
 anyhow = "1.0.98"
 async-stream = "0.3.6"
+exif = "0.0.1"
 flate2 = "1.1.2"
 flutter_rust_bridge = "=2.10.0"
 image = "0.25.6"
