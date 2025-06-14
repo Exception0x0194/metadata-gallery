@@ -28,9 +28,15 @@ class HomePageViewmodel extends ChangeNotifier {
     orderReversed = prefsService.getBool(prefsOrderReversedKey, false);
   }
 
+  Future<void> initialize() async {
+    // Show all images
+    searchResult = await dbService.getAllImages();
+    reorderResults();
+  }
+
   Future<void> callScan() async {
     final folders = dbService.folders;
-    final allImages = await dbService.getAllImages();
+    final allImages = await dbService.getAllFiles();
     final allImagesMap = {
       for (var img in allImages) img.filePath: img.lastModieied,
     };
@@ -90,14 +96,14 @@ class HomePageViewmodel extends ChangeNotifier {
       print('Search for {$keyword}: ${searchResult.length} results');
     }
     reorderResults();
-  }
-
-  void onPrefsChanged() {
     notifyListeners();
   }
 
   void reorderResults() {
-    if (orderOption == prefsOrderByName) {
+    if (orderOption == prefsOrderByShuffled) {
+      searchResult.shuffle();
+      return;
+    } else if (orderOption == prefsOrderByName) {
       searchResult.sort((a, b) => a.filePath.compareTo(b.filePath));
     } else if (orderOption == prefsOrderByLastModified) {
       searchResult.sort((a, b) => a.lastModieied.compareTo(b.lastModieied));
@@ -107,19 +113,23 @@ class HomePageViewmodel extends ChangeNotifier {
     if (orderReversed) {
       searchResult = searchResult.reversed.toList();
     }
-    notifyListeners();
   }
 
-  Future<void> setSortOption(value) async {
-    prefsService.setString(prefsOrderKey, value);
+  Future<void> setSortOption(String value) async {
+    if (orderOption == value && value != prefsOrderByShuffled) return;
     orderOption = value;
     reorderResults();
+    prefsService.setString(prefsOrderKey, value);
   }
 
   void setReversed(bool? value) {
     if (value == null) return;
-    prefsService.setBool(prefsOrderReversedKey, value);
     orderReversed = value;
     reorderResults();
+    prefsService.setBool(prefsOrderReversedKey, value);
+  }
+
+  void onPrefsChanged() {
+    notifyListeners();
   }
 }

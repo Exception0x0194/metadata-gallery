@@ -23,6 +23,10 @@ class _HomePageState extends State<HomePage> {
   FocusNode get searchFocusNode => viewmodel.searchFocusNode;
 
   final Map<String, PopupMenuItem<String>> orderEntries = {
+    prefsOrderByShuffled: PopupMenuItem(
+      value: prefsOrderByShuffled,
+      child: Text('随机排序'),
+    ),
     prefsOrderByName: PopupMenuItem(
       value: prefsOrderByName,
       child: Text('文件名称'),
@@ -43,25 +47,20 @@ class _HomePageState extends State<HomePage> {
             children: [
               Padding(
                 padding: EdgeInsets.all(8.0),
-                child: ListTile(
-                  title: TextField(
-                    controller: searchController,
-                    focusNode: searchFocusNode,
-                    onSubmitted: (keyword) => viewmodel.searchImages(keyword),
-                  ),
-                  subtitle: Text('检索的元数据内容'),
-                  trailing: IconButton(
-                    onPressed: () =>
-                        viewmodel.searchImages(searchController.text),
-                    icon: Icon(Icons.search_outlined),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 32.0),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    Expanded(
+                      child: ListTile(
+                        title: TextField(
+                          controller: searchController,
+                          focusNode: searchFocusNode,
+                          onSubmitted: (keyword) =>
+                              viewmodel.searchImages(keyword),
+                        ),
+                        subtitle: Text('检索的元数据内容，按回车检索'),
+                      ),
+                    ),
+                    VerticalDivider(),
                     Text('排序依据：'),
                     PopupMenuButton<String>(
                       child: orderEntries[viewmodel.orderOption]!.child as Text,
@@ -72,7 +71,9 @@ class _HomePageState extends State<HomePage> {
                     Text('倒序'),
                     Checkbox(
                       value: viewmodel.orderReversed,
-                      onChanged: (value) => viewmodel.setReversed(value),
+                      onChanged: viewmodel.orderOption == prefsOrderByShuffled
+                          ? null
+                          : (value) => viewmodel.setReversed(value),
                     ),
                   ],
                 ),

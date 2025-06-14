@@ -12,7 +12,7 @@ import 'ui/views/settings_page.dart';
 Future<void> main() async {
   await RustLib.init();
   await setupLocators();
-  setupViewmodels();
+  await setupViewmodels();
   runApp(const MyApp());
 }
 
@@ -78,13 +78,14 @@ Future<void> setupLocators() async {
   getIt.registerSingleton(databaseService);
 }
 
-void setupViewmodels() {
+Future<void> setupViewmodels() async {
   DatabaseService dbService = GetIt.I();
   PreferencesService prefsService = GetIt.I();
 
   final homePageViewmodel = HomePageViewmodel();
   prefsService.addListener(() => homePageViewmodel.onPrefsChanged());
   GetIt.I.registerSingleton(homePageViewmodel);
+  await homePageViewmodel.initialize();
 
   final settingsPageViewmodel = SettingsPageViewmodel();
   dbService.addListener(() => settingsPageViewmodel.onDatabaseChanged());

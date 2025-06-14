@@ -114,6 +114,27 @@ class DatabaseService with ChangeNotifier {
     });
   }
 
+  Future<List<ScannedImage>> getAllFiles() async {
+    final List<Map<String, dynamic>> maps = await db.query(
+      _imageTableName,
+      columns: [
+        _colFilePath,
+        _colMetadataText,
+        _colLastModified,
+        _colAspectRatio,
+      ],
+    );
+    return List.generate(
+      maps.length,
+      (i) => ScannedImage(
+        filePath: maps[i][_colFilePath],
+        metadataString: maps[i][_colMetadataText],
+        aspectRatio: maps[i][_colAspectRatio],
+        lastModieied: BigInt.from(maps[i][_colLastModified]),
+      ),
+    );
+  }
+
   Future<List<ScannedImage>> getAllImages() async {
     final List<Map<String, dynamic>> maps = await db.query(
       _imageTableName,
@@ -123,6 +144,7 @@ class DatabaseService with ChangeNotifier {
         _colLastModified,
         _colAspectRatio,
       ],
+      where: '$_colAspectRatio NOT NULL',
     );
     return List.generate(
       maps.length,
